@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import ReactFlow, {
   MiniMap,
@@ -11,29 +11,51 @@ import ReactFlow, {
   applyNodeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { idState } from "./Atom";
 
 import TextUpdaterNode from "./TextUpdaterNode.js";
+import { useRecoilState, useRecoilValue } from "recoil";
 
 const initialNodes = [
   {
     id: "node-1",
     type: "textUpdater",
-    position: { x: 100, y: 20 },
-    data: { label: "Student", p1: "Name", p1type: "String", p2: "ID", p2type: "Number", p3: "Section", p3type: "String" },
+    position: { x: 350, y: 100 },
+    data: {
+      label: "Student",
+      type: "type",
+      arr: [
+        { name: "Name", type: "String" },
+        { name: "ID", type: "Number" },
+        { name: "Section", type: "String" },
+      ],
+    },
   },
   {
     id: "node-2",
-    type: "output",
-    targetPosition: "top",
-    position: { x: 20, y: 400 },
-    data: { label: "Project" },
+    type: "textUpdater",
+    position: { x: 200, y: 400 },
+    data: {
+      label: "Teacher",
+      type: "interface",
+      arr: [
+        { name: "Name", type: "String" },
+        { name: "ID", type: "Number" },
+      ],
+    },
   },
   {
     id: "node-3",
-    type: "output",
-    targetPosition: "top",
-    position: { x: 220, y: 400 },
-    data: { label: "Lab" },
+    type: "textUpdater",
+    position: { x: 500, y: 400 },
+    data: {
+      label: "Admin",
+      type: "type",
+      arr: [
+        { name: "Name", type: "String" },
+        { name: "ID", type: "Number" },
+      ],
+    },
   },
 ];
 
@@ -43,22 +65,6 @@ const initialEdges = [
 ];
 
 const nodeTypes = { textUpdater: TextUpdaterNode };
-
-
-// const initialNodes = [
-//   { id: "1", position: { x: 20, y: 20 }, data: { label: "Node 1" } },
-//   { id: "2", position: { x: 50, y: 100 }, data: { label: "Node 2" } },
-//   { id: "3", position: { x: 100, y: 200 }, data: { label: "Node 3" } },
-//   { id: "4", position: { x: 150, y: 400 }, data: { label: "Node 4" } },
-//   { id: "5", position: { x: 200, y: 300 }, data: { label: "Node 5" } },
-// ];
-
-// const initialEdges = [
-//   { id: "e1-2", source: "1", target: "2", label: "to", type: "step" },
-//   { id: "e1-5", source: "1", target: "5", label: "to", type: "step" },
-//   { id: "e3-5", source: "3", target: "5", label: "to", type: "step" },
-//   { id: "e2-3", source: "2", target: "3", label: "to", type: "step" },
-// ];
 
 function App() {
 
@@ -80,18 +86,20 @@ function App() {
   const [name, setName] = useState("");
   const [posX, setPosX] = useState("");
   const [posY, setPosY] = useState("");
-  const [p1, setP1] = useState("");
-  const [p1T, setP1T] = useState("");
-  const [p2, setP2] = useState("");
-  const [p2T, setP2T] = useState("");
-  const [p3, setP3] = useState("");
-  const [p3T, setP3T] = useState("");
+  const [type, setType] = useState("");
+
+  const [pname, setPname] = useState("");
+  const [ptype, setPtype] = useState("");
 
   // const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   // const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
+
+  const [value, setValue] = useRecoilState(idState);
+
+  const [sch, setSch]= useState('');
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -117,6 +125,7 @@ function App() {
 
   const addNode = (e) => {
     console.log(name, posX, posY);
+    console.log(type)
     setNodes((nodes) => {
       return [
         ...nodes,
@@ -126,12 +135,8 @@ function App() {
           position: { x: posX, y: posY },
           data: {
             label: name,
-            p1: p1,
-            p1type: p1T,
-            p2: p2,
-            p2type: p2T,
-            p3: p3,
-            p3type: p3T,
+            type: type,
+            arr: []
           },
         },
       ];
@@ -139,8 +144,39 @@ function App() {
     e.preventDefault();
   };
 
+  useEffect(() => {
+    displaySchema()
+  },[nodes]);
+
+  const editNode = (e) => {
+      const newState = nodes.map((obj) => {
+        if (obj.id === value) {
+          let temp = obj.data;
+          temp.arr.push({ name: pname, type: ptype });
+          console.log(temp);
+          setValue('')
+          return { ...obj, data: temp };
+        }
+        return obj;
+      });
+      console.log(newState);
+      setNodes(newState);
+      setPname('');
+      setPtype('');
+      e.preventDefault();
+  }
+
   const displaySchema = () => {
-    console.log(nodes);
+    let schema = "";
+    nodes.map((item) => {
+      schema = schema + item.data.type + ' ' + item.data.label + ' { \n '
+      item.data.arr.map((val) => {
+        schema = schema + val.name + ': ' + val.type + ', \n '
+      })
+      schema = schema + '} \n'
+    })
+    // console.log(schema);
+    setSch(schema)
   };
 
   return (
@@ -163,6 +199,61 @@ function App() {
             Schema
           </button>
           <br></br>
+          <div
+            className="modal fade"
+            id="exampleModal2"
+            aria-labelledby="exampleModalLabel"
+            aria-hidden="true"
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h1 className="modal-title fs-5" id="exampleModalLabel">
+                    Add Property
+                  </h1>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <input
+                    className="form"
+                    type="text"
+                    placeholder="Name"
+                    value={pname}
+                    onChange={(e) => setPname(e.target.value)}
+                  />
+                  <input
+                    className="form"
+                    type="text"
+                    placeholder="Type"
+                    value={ptype}
+                    onChange={(e) => setPtype(e.target.value)}
+                  />
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    data-bs-dismiss="modal"
+                    className="btn btn-primary"
+                    onClick={(e) => editNode(e)}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           <div
             className="modal fade"
             id="exampleModal"
@@ -189,6 +280,17 @@ function App() {
                     placeholder="Node Name"
                     onChange={(e) => setName(e.target.value)}
                   />
+                  <select
+                    className="form-select"
+                    aria-label="Default select example"
+                    style={{ marginTop: "10px" }}
+                    onChange={(e) => setType(e.target.value)}
+                  >
+                    <option value="null">Select</option>
+                    <option value="input">input</option>
+                    <option value="type">type</option>
+                    <option value="interface">interface</option>
+                  </select>
                   <input
                     className="form"
                     id="posInput"
@@ -204,44 +306,6 @@ function App() {
                     onChange={(e) => setPosY(e.target.value)}
                   />
                   <br></br>
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Property 1"
-                    onChange={(e) => setP1(e.target.value)}
-                  />
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Type"
-                    onChange={(e) => setP1T(e.target.value)}
-                  />
-                  <br></br>
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Property 2"
-                    onChange={(e) => setP2(e.target.value)}
-                  />
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Type"
-                    onChange={(e) => setP2T(e.target.value)}
-                  />
-                  <br></br>
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Property 3"
-                    onChange={(e) => setP3(e.target.value)}
-                  />
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Type"
-                    onChange={(e) => setP3T(e.target.value)}
-                  />
                 </div>
                 <div className="modal-footer">
                   <button
@@ -279,24 +343,14 @@ function App() {
               className="form-control"
               placeholder="Leave a comment here"
               id="floatingTextarea2"
-              style={{ height: "980px", width: 400 }}
-              value={JSON.stringify(nodes)}
+              style={{ height: "980px", width: 400, fontWeight: 600, paddingTop: '40px' }}
+              // value={sch}
+              defaultValue={sch}
             ></textarea>
             <label htmlFor="floatingTextarea2">Schema</label>
           </div>
         </div>
-        <div style={{ height: 950, width: 800 }}>
-          {/* <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-          >
-            <MiniMap />
-            <Controls />
-            <Background />
-          </ReactFlow> */}
+        <div style={{ height: 950, width: 1400 }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
