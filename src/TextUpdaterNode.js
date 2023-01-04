@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
-import { useCallback } from "react";
+import React from 'react';
 import { Handle, Position } from "reactflow";
 import { useRecoilState } from 'recoil';
-import { idState } from './Atom'
+import { idState } from './Atom';
 
 const handleStyle = { left: 10 };
 
@@ -42,12 +41,12 @@ export default function TextUpdaterNode(props) {
           </button>
         </center>
       </div>
-      <Handle
+      {/* <Handle
         type="source"
         position={Position.Bottom}
         id="a"
-        // style={handleStyle}
-      />
+        style={handleStyle}
+      /> */}
       <Handle type="source" position={Position.Bottom} id="b" />
     </div>
   );

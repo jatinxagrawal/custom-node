@@ -1,20 +1,51 @@
 import React, { useCallback, useEffect, useState } from "react";
 import "./App.css";
-import ReactFlow, {
-  MiniMap,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
-} from "reactflow";
+import ReactFlow, { MiniMap, Controls, Background, addEdge, applyEdgeChanges, applyNodeChanges } from "reactflow";
 import "reactflow/dist/style.css";
 import { idState } from "./Atom";
+import { Parser, TreeToGraphQL } from "graphql-js-tree";
 
 import TextUpdaterNode from "./TextUpdaterNode.js";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
+
+const schemaFileContents = `
+type Query {
+    getAvailabilityRequests(status:[String]
+        pageOptions: LimitOffsetInput,
+        sortOption: SortOption ): getAvailabilityRequests
+
+    getAvailabilityRequest(podConfigId:Int): AvailabilityRequest
+
+    getAvailabilityRoleRequests(status: [String]
+        pageOptions: LimitOffsetInput,
+        sortOption: SortOption): AvailabilityRoleRequests
+
+    getUser(email:String!): User
+
+    getUsers(
+        pageOptions: LimitOffsetInput,
+        searchNameOrEmail: String
+    ): getUsers
+}
+type SystemStatus {
+    status:String
+}
+input SortOption {
+    sortKey: String
+    sortOrder: String
+}
+type Mutation {
+    createAvailabilityRequest(availabilityRequest:AvailabilityRequestInput): MutationResponse
+
+    cancelAvailabilityRequest(availabilityRequestId:Int):MutationResponse
+
+    provideConfidenceForPosition(positionConfidenceInput:PositionConfidenceInput):MutationResponse
+
+    provideConfidenceForPod(podConfidenceInput:PodConfidenceInput):MutationResponse
+
+    commitPodRequest(podConfigId:Int): MutationResponse
+}
+`;
 
 const initialNodes = [
   {
@@ -26,7 +57,7 @@ const initialNodes = [
       type: "type",
       arr: [
         { name: "Name", type: "String" },
-        { name: "ID", type: "Number" },
+        { name: "ID", type: "ID" },
         { name: "Section", type: "String" },
       ],
     },
@@ -40,7 +71,7 @@ const initialNodes = [
       type: "interface",
       arr: [
         { name: "Name", type: "String" },
-        { name: "ID", type: "Number" },
+        { name: "ID", type: "ID" },
       ],
     },
   },
@@ -53,7 +84,7 @@ const initialNodes = [
       type: "type",
       arr: [
         { name: "Name", type: "String" },
-        { name: "ID", type: "Number" },
+        { name: "ID", type: "ID" },
       ],
     },
   },
@@ -91,15 +122,19 @@ function App() {
   const [pname, setPname] = useState("");
   const [ptype, setPtype] = useState("");
 
-  // const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  // const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
 
   const [value, setValue] = useRecoilState(idState);
 
   const [sch, setSch]= useState('');
+
+  const [JSONObj, setJSONObj] = useState({
+    fileName: "sample.graphqls",
+    objects: [],
+    query: [],
+    mutations: [],
+  });
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -113,11 +148,6 @@ function App() {
     (connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges]
   );
-
-  // const onConnect = useCallback(
-  //   (params) => setEdges((eds) => addEdge(params, eds)),
-  //   [setEdges]
-  // );
 
   const clearNode = () => {
     setNodes(() => []);
@@ -145,8 +175,90 @@ function App() {
   };
 
   useEffect(() => {
-    displaySchema()
+    displaySchema();
   },[nodes]);
+
+  const getSchema= () => {
+
+    const parsedSchema = Parser.parse(sch);
+    // console.log(parsedSchema)
+    let temp= JSONObj;
+    const qArr = parsedSchema.nodes.filter(item => item.name==='Query')
+    const mArr = parsedSchema.nodes.filter((item) => item.name === "Mutation");
+    const oArr = parsedSchema.nodes.filter((item) => item.name !== "Mutation" & item.name!=='Query');
+   
+    oArr.map((item) => {
+      let obj= { name: item.name, fields: [] }
+      item.args.map((arg) => {
+        let Type;
+        if (arg.type.fieldType.name === undefined) {
+          Type = arg.type.fieldType.nest.name;
+          if (arg.type.fieldType.type === "array") {
+            Type = "[" + Type + "]";
+          }
+          if (arg.type.fieldType.type === "required") {
+            Type = Type + "!";
+          }
+        } else {
+          Type = arg.type.fieldType.name;
+        }
+        obj.fields.push({ name: arg.name, type: Type })
+      })
+      temp.objects.push(obj)
+    })
+   
+    if (qArr.length>0) {
+    qArr[0].args.map((item) => {
+      let obj = { name: item.name, returntype: item.type.fieldType.name , arguments: [] };
+      item.args.map((arg) => {
+        let Type;
+        if (arg.type.fieldType.name===undefined) {
+            Type = arg.type.fieldType.nest.name
+          if (arg.type.fieldType.type === 'array') {
+            Type= '[' + Type + ']'
+          }
+          if (arg.type.fieldType.type === "required") {
+            Type = Type + "!";
+          }
+        }
+        else {
+            Type = arg.type.fieldType.name;
+        }
+        obj.arguments.push({ name: arg.name, type: Type });
+      });
+      temp.query.push(obj);
+    });
+  }
+    
+   if (qArr.length>0) {
+    mArr[0].args.map((item) => {
+      let obj = {
+        name: item.name,
+        returntype: item.type.fieldType.name,
+        arguments: [],
+      };
+      item.args.map((arg) => {
+        let Type;
+        if (arg.type.fieldType.name === undefined) {
+          Type = arg.type.fieldType.nest.name;
+          if (arg.type.fieldType.type === "array") {
+            Type = "[" + Type + "]";
+          }
+          if (arg.type.fieldType.type === "required") {
+            Type = Type + "!";
+          }
+        } else {
+          Type = arg.type.fieldType.name;
+        }
+        obj.arguments.push({ name: arg.name, type: Type });
+      });
+      temp.mutations.push(obj);
+    });
+  }
+
+    setJSONObj(temp)
+    console.log(JSONObj)
+  }
 
   const editNode = (e) => {
       const newState = nodes.map((obj) => {
@@ -170,8 +282,14 @@ function App() {
     let schema = "";
     nodes.map((item) => {
       schema = schema + item.data.type + ' ' + item.data.label + ' { \n '
-      item.data.arr.map((val) => {
-        schema = schema + val.name + ': ' + val.type + ', \n '
+      item.data.arr.map((val,ind) => {
+        schema = schema + val.name + ': ' + val.type
+        if (ind!==item.data.arr.length-1) {
+          schema = schema + ", \n "
+        }
+        else {
+          schema = schema + "\n ";
+        }
       })
       schema = schema + '} \n'
     })
@@ -195,7 +313,7 @@ function App() {
             Add
           </button>
           <br></br>
-          <button className="button" onClick={() => displaySchema()}>
+          <button className="button" onClick={() => getSchema()}>
             Schema
           </button>
           <br></br>
