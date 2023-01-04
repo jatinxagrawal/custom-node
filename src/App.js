@@ -4,6 +4,7 @@ import ReactFlow, { MiniMap, Controls, Background, addEdge, applyEdgeChanges, ap
 import "reactflow/dist/style.css";
 import { idState } from "./Atom";
 import { Parser, TreeToGraphQL } from "graphql-js-tree";
+import axios from "axios";
 
 import TextUpdaterNode from "./TextUpdaterNode.js";
 import { useRecoilState } from "recoil";
@@ -256,8 +257,17 @@ function App() {
     });
   }
 
-    setJSONObj(temp)
-    console.log(JSONObj)
+    setJSONObj(temp);
+    console.log(JSONObj);
+
+    axios
+      .post("/user", JSONObj)
+      .then(function (response) {
+        console.log(response);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   }
 
   const editNode = (e) => {
