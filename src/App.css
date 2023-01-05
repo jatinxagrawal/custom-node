@@ -73,3 +73,9 @@
   font-weight: bold;
   font-size: 18px;
 }
+
+.select-type {
+  padding: 3px;
+  margin-left: 5px;
+  width: 200px;
+}

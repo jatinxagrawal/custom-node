@@ -3,8 +3,6 @@ import { Handle, Position } from "reactflow";
 import { useRecoilState } from 'recoil';
 import { idState } from './Atom';
 
-const handleStyle = { left: 10 };
-
 export default function TextUpdaterNode(props) {
 
   const [id, setID] = useRecoilState(idState);
@@ -41,13 +39,7 @@ export default function TextUpdaterNode(props) {
           </button>
         </center>
       </div>
-      {/* <Handle
-        type="source"
-        position={Position.Bottom}
-        id="a"
-        style={handleStyle}
-      /> */}
-      <Handle type="source" position={Position.Bottom} id="b" />
+      <Handle type="source" position={Position.Bottom} id="a" />
     </div>
   );
 }

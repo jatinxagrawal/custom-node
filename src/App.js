@@ -5,48 +5,9 @@ import "reactflow/dist/style.css";
 import { idState } from "./Atom";
 import { Parser, TreeToGraphQL } from "graphql-js-tree";
 import axios from "axios";
-
 import TextUpdaterNode from "./TextUpdaterNode.js";
 import { useRecoilState } from "recoil";
-
-const schemaFileContents = `
-type Query {
-    getAvailabilityRequests(status:[String]
-        pageOptions: LimitOffsetInput,
-        sortOption: SortOption ): getAvailabilityRequests
-
-    getAvailabilityRequest(podConfigId:Int): AvailabilityRequest
-
-    getAvailabilityRoleRequests(status: [String]
-        pageOptions: LimitOffsetInput,
-        sortOption: SortOption): AvailabilityRoleRequests
-
-    getUser(email:String!): User
-
-    getUsers(
-        pageOptions: LimitOffsetInput,
-        searchNameOrEmail: String
-    ): getUsers
-}
-type SystemStatus {
-    status:String
-}
-input SortOption {
-    sortKey: String
-    sortOrder: String
-}
-type Mutation {
-    createAvailabilityRequest(availabilityRequest:AvailabilityRequestInput): MutationResponse
-
-    cancelAvailabilityRequest(availabilityRequestId:Int):MutationResponse
-
-    provideConfidenceForPosition(positionConfidenceInput:PositionConfidenceInput):MutationResponse
-
-    provideConfidenceForPod(podConfidenceInput:PodConfidenceInput):MutationResponse
-
-    commitPodRequest(podConfigId:Int): MutationResponse
-}
-`;
+import { generateNode } from './Schema.js';
 
 const initialNodes = [
   {
@@ -104,9 +65,10 @@ function App() {
 
   const fileRead = (e) => {
     const content = fileReader.result;
-    console.log(content);
-    const data = eval(content);
-    setNodes(() => data);
+    // console.log(content);
+    // const data = eval(content);
+    // setNodes(() => data);
+    setNodes(() => generateNode(content))
   };
 
   const fileChosen = (file) => {
@@ -179,12 +141,11 @@ function App() {
     displaySchema();
   },[nodes]);
 
-  const getSchema= () => {
-
+  const getSchema = () => {
     const parsedSchema = Parser.parse(sch);
     // console.log(parsedSchema)
     let temp= JSONObj;
-    const qArr = parsedSchema.nodes.filter(item => item.name==='Query')
+    const qArr = parsedSchema.nodes.filter(item => item.name==='Query');
     const mArr = parsedSchema.nodes.filter((item) => item.name === "Mutation");
     const oArr = parsedSchema.nodes.filter((item) => item.name !== "Mutation" & item.name!=='Query');
    
@@ -231,7 +192,7 @@ function App() {
     });
   }
     
-   if (qArr.length>0) {
+   if (mArr.length>0) {
     mArr[0].args.map((item) => {
       let obj = {
         name: item.name,
@@ -304,7 +265,7 @@ function App() {
       schema = schema + '} \n'
     })
     // console.log(schema);
-    setSch(schema)
+    setSch(schema);
   };
 
   return (
@@ -409,12 +370,12 @@ function App() {
                     onChange={(e) => setName(e.target.value)}
                   />
                   <select
-                    className="form-select"
-                    aria-label="Default select example"
+                    className="select-type"
+                    aria-label="select example"
                     style={{ marginTop: "10px" }}
                     onChange={(e) => setType(e.target.value)}
                   >
-                    <option value="null">Select</option>
+                    <option value="null">Select Type</option>
                     <option value="input">input</option>
                     <option value="type">type</option>
                     <option value="interface">interface</option>
@@ -461,7 +422,7 @@ function App() {
           <input
             type="file"
             id="file-input"
-            accept=".txt"
+            accept=".graphqls"
             onChange={(e) => fileChosen(e)}
           />
         </div>
