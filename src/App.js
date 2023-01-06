@@ -167,7 +167,11 @@ function App() {
         } else {
           Type = arg.type.fieldType.name;
         }
-        obj.fields.push({ name: arg.name, type: Type })
+        let Directive= '';
+        if (Type==="ID") {
+          Directive = ` @constraint(type:"primarykey")` 
+        }
+        obj.fields.push({ name: arg.name, type: Type, directive: Directive })
       })
       temp.objects.push(obj)
     })
