@@ -129,7 +129,10 @@ function App() {
           data: {
             label: name,
             type: type,
-            arr: []
+            arr: [{
+              name: "ID",
+              type: "ID"
+            }]
           },
         },
       ];
@@ -229,6 +232,14 @@ function App() {
       .catch(function (error) {
         console.log(error);
       });
+    
+    setJSONObj({
+      fileName: "sample.graphqls",
+      objects: [],
+      query: [],
+      mutations: [],
+    });
+    
   }
 
   const editNode = (e) => {
