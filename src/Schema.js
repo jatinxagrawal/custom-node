@@ -15,8 +15,8 @@ export const generateNode = (data) => {
       id: item.name,
       type: "textUpdater",
       position: {
-        x: Math.floor(Math.random() * 100 + 1),
-        y: Math.floor(Math.random() * 100 + 1),
+        x: Math.floor(Math.random() * 500 + 1),
+        y: Math.floor(Math.random() * 500 + 1),
       },
       data: {
         label: item.name,
@@ -50,8 +50,8 @@ export const generateNode = (data) => {
       id: "Query",
       type: "textUpdater",
       position: {
-        x: Math.floor(Math.random() * 100 + 1),
-        y: Math.floor(Math.random() * 100 + 1),
+        x: Math.floor(Math.random() * 500 + 1),
+        y: Math.floor(Math.random() * 500 + 1),
       },
       data: {
         label: "Query",
@@ -61,7 +61,7 @@ export const generateNode = (data) => {
     };
     qArr[0].args.map((item) => {
       let ob = { name: item.name + "(", type: item.type.fieldType.name };
-      item.args.map((arg) => {
+      item.args.map((arg,ind) => {
         let Type;
         if (arg.type.fieldType.name === undefined) {
           Type = arg.type.fieldType.nest.name;
@@ -78,6 +78,9 @@ export const generateNode = (data) => {
           Type = arg.type.fieldType.name;
         }
         ob.name = ob.name + arg.name + ": " + Type;
+        if (ind !== item.args.length-1) {
+          ob.name = ob.name + ", "
+        }
       });
       ob.name = ob.name + ")";
       obj.data.arr.push(ob);
@@ -90,8 +93,8 @@ export const generateNode = (data) => {
       id: "Mutation",
       type: "textUpdater",
       position: {
-        x: Math.floor(Math.random() * 100 + 1),
-        y: Math.floor(Math.random() * 100 + 1),
+        x: Math.floor(Math.random() * 500 + 1),
+        y: Math.floor(Math.random() * 500 + 1),
       },
       data: {
         label: "Mutation",
@@ -101,7 +104,7 @@ export const generateNode = (data) => {
     };
     mArr[0].args.map((item) => {
       let ob = { name: item.name + "(", type: item.type.fieldType.name };
-      item.args.map((arg) => {
+      item.args.map((arg,ind) => {
         let Type;
         if (arg.type.fieldType.name === undefined) {
           Type = arg.type.fieldType.nest.name;
@@ -118,6 +121,9 @@ export const generateNode = (data) => {
           Type = arg.type.fieldType.name;
         }
         ob.name = ob.name + arg.name + ": " + Type;
+        if (ind !== item.args.length - 1) {
+          ob.name = ob.name + ", ";
+        }
       });
       ob.name = ob.name + ")";
       obj.data.arr.push(ob);

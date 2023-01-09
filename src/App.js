@@ -99,6 +99,8 @@ function App() {
     mutations: [],
   });
 
+  const [status, setStatus] = useState(false);
+
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes]
@@ -269,7 +271,7 @@ function App() {
     nodes.map((item) => {
       schema = schema + item.data.type + ' ' + item.data.label + ' { \n '
       item.data.arr.map((val,ind) => {
-        schema = schema + val.name + ': ' + val.type
+        schema = schema + " " + val.name + ': ' + val.type
         if (ind!==item.data.arr.length-1) {
           schema = schema + ", \n "
         }
@@ -282,6 +284,16 @@ function App() {
     // console.log(schema);
     setSch(schema);
   };
+
+  const onSave = () => {
+    setStatus(false);
+    setNodes(() => generateNode(sch));
+  }
+
+  const changeHandler = (val) => {
+    setStatus(true);
+    setSch(val)
+  }
 
   return (
     <>
@@ -299,7 +311,14 @@ function App() {
             Add
           </button>
           <br></br>
-          <button className="button" onClick={() => getSchema()}>
+          <button
+            className="button"
+            onClick={() => onSave()}
+          >
+            Save
+          </button>
+          <br></br>
+          <button className="button" onClick={() => getSchema()} disabled={status} style={status ? {background: 'grey', borderColor: 'grey'} : {}}>
             Schema
           </button>
           <br></br>
@@ -330,13 +349,16 @@ function App() {
                     value={pname}
                     onChange={(e) => setPname(e.target.value)}
                   />
-                  <input
-                    className="form"
-                    type="text"
-                    placeholder="Type"
-                    value={ptype}
+                  <select
+                    className="select-type"
+                    aria-label="select example"
                     onChange={(e) => setPtype(e.target.value)}
-                  />
+                  >
+                    <option value="null">Select Type</option>
+                    <option value="ID">ID</option>
+                    <option value="Int">Int</option>
+                    <option value="String">String</option>
+                  </select>
                 </div>
                 <div className="modal-footer">
                   <button
@@ -387,13 +409,16 @@ function App() {
                   <select
                     className="select-type"
                     aria-label="select example"
-                    style={{ marginTop: "10px" }}
                     onChange={(e) => setType(e.target.value)}
                   >
                     <option value="null">Select Type</option>
                     <option value="input">input</option>
                     <option value="type">type</option>
                     <option value="interface">interface</option>
+                    <option value="enum">enum</option>
+                    <option value="union">union</option>
+                    <option value="scaler">scaler</option>
+                    <option value="extend">extend</option>
                   </select>
                   <input
                     className="form"
@@ -447,9 +472,14 @@ function App() {
               className="form-control"
               placeholder="Leave a comment here"
               id="floatingTextarea2"
-              style={{ height: "980px", width: 400, fontWeight: 600, paddingTop: '40px' }}
-              // value={sch}
-              defaultValue={sch}
+              style={{
+                height: "980px",
+                width: 400,
+                fontWeight: 600,
+                paddingTop: "40px",
+              }}
+              value={sch}
+              onChange={(e) => changeHandler(e.target.value)}
             ></textarea>
             <label htmlFor="floatingTextarea2">Schema</label>
           </div>
