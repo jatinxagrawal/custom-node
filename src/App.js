@@ -231,7 +231,7 @@ function App() {
     console.log(JSONObj);
 
     axios
-      .post("/user", JSONObj)
+      .post("http://localhost:8080/", JSONObj)
       .then(function (response) {
         console.log(response);
       })
