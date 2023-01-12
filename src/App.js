@@ -8,6 +8,7 @@ import axios from "axios";
 import TextUpdaterNode from "./TextUpdaterNode.js";
 import { useRecoilState } from "recoil";
 import { generateNode } from './Schema.js';
+import Editor, { DiffEditor, useMonaco, loader } from "@monaco-editor/react";
 
 const initialNodes = [
   {
@@ -290,10 +291,10 @@ function App() {
     setNodes(() => generateNode(sch));
   }
 
-  const changeHandler = (val) => {
+  const changeHandler = (value, event) => {
     setStatus(true);
-    setSch(val)
-  }
+    setSch(value);
+  };
 
   return (
     <>
@@ -311,14 +312,16 @@ function App() {
             Add
           </button>
           <br></br>
-          <button
-            className="button"
-            onClick={() => onSave()}
-          >
+          <button className="button" onClick={() => onSave()}>
             Save
           </button>
           <br></br>
-          <button className="button" onClick={() => getSchema()} disabled={status} style={status ? {background: 'grey', borderColor: 'grey'} : {}}>
+          <button
+            className="button"
+            onClick={() => getSchema()}
+            disabled={status}
+            style={status ? { background: "grey", borderColor: "grey" } : {}}
+          >
             Schema
           </button>
           <br></br>
@@ -467,7 +470,7 @@ function App() {
           />
         </div>
         <div>
-          <div className="form-floating">
+          {/* <div className="form-floating">
             <textarea
               className="form-control"
               placeholder="Leave a comment here"
@@ -482,9 +485,17 @@ function App() {
               onChange={(e) => changeHandler(e.target.value)}
             ></textarea>
             <label htmlFor="floatingTextarea2">Schema</label>
-          </div>
+          </div> */}
+          <Editor
+            height="980px"
+            width="400px"
+            defaultLanguage="graphql"
+            value={sch}
+            onChange={changeHandler}
+            // theme="vs-dark"
+          />
         </div>
-        <div style={{ height: 950, width: 1400 }}>
+        <div style={{ height: 980, width: 1400 }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
